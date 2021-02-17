@@ -27,9 +27,8 @@ file.close()
 
 #Saves data when it's sunny :)
 def saveData():
-    time = datetime.datetime.now()
-
     while isDay() == True:
+        time = datetime.datetime.now()
         mag_x, mag_y, mag_z = get_magnetometer()
         angle, issRA, issDEC = get_isslocation()
         pitch, roll, yaw = get_orientation()
