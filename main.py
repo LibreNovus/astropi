@@ -7,6 +7,9 @@ import ephem
 import math
 import cv2
 
+start_time = datetime.datetime.now()
+now_time = datetime.datetime.now()
+
 sense = SenseHat()
 camera = PiCamera()
 
@@ -38,7 +41,7 @@ def saveData():
         cloud = cloud_estimate(img)
         
         with open (filename, "a") as file:
-            file.write("%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s\n" % (time, imageName, cloud, mag_x, mag_y, mag_z, pressure, pitch, roll, yaw, angle, issRA, issDEC))
+            file.write("%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s \n" % (time, imageName, cloud, mag_x, mag_y, mag_z, pressure, pitch, roll, yaw, angle, issRA, issDEC))
         sleep(5)
     main()
 
@@ -49,6 +52,7 @@ def takePicture():
     camera.capture('img%d.jpg'%imagenumber)
     return('img%d.jpg'%imagenumber)
 
+#Rough unreliable estimation of cloud percentage with opencv2. Better estimation will be done in phase 4 with pytorch 
 def cloud_estimate(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv, (0,0,120), (180,30,255))
@@ -65,6 +69,7 @@ def get_orientation():
     yaw = ori["yaw"]
     return(pitch, roll, yaw)
 
+#Magnetometer data to be compared with cloud percentage.
 def get_magnetometer():
     mag = sense.get_compass_raw()
     mag_x = round(mag["x"],2)
@@ -80,7 +85,6 @@ def get_isslocation():
     abs_angle = abs(angle)
     return(abs_angle, iss.ra, iss.dec)
   
-#Location
 def get_pressure():
     pressure = sense.get_pressure()
     pressure = round(pressure, 1)
@@ -103,13 +107,16 @@ def isDay():
         return True
 
 def main():
-    if isDay() == True:
-        print("comma running")
-        saveData()
-    elif isDay() == False:
-        print("comma waiting")
-        sleep(600)
-        main()
+    while (now_time < start_time + datetime.timedelta(minutes=2)):
+        if isDay() == True:
+            print("comma running")
+            saveData()
+        elif isDay() == False:
+            print("comma waiting")
+            sleep(600)
+            main()
+        now_time = datetime.datetime.now()
+    print('2 minutes')
 
 if __name__ == '__main__':
     main()
