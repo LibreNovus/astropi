@@ -7,13 +7,15 @@ import ephem
 import math
 import cv2
 
-start_time = datetime.datetime.now()
-now_time = datetime.datetime.now()
-
 sense = SenseHat()
 camera = PiCamera()
+camera.resolution = (1296, 972)
+
 
 imagenumber = 0
+
+start_time = datetime.datetime.now()
+now_time = datetime.datetime.now()
 
 #Two-line element set for ISS https://www.celestrak.com/NORAD/elements/stations.txt
 name = "ISS (ZARYA)"
@@ -30,20 +32,33 @@ file.close()
 
 #Saves data when it's sunny :)
 def saveData():
+    global now_time
+    end = False
     while isDay() == True:
-        time = datetime.datetime.now()
-        mag_x, mag_y, mag_z = get_magnetometer()
-        angle, issRA, issDEC = get_isslocation()
-        pitch, roll, yaw = get_orientation()
-        pressure = get_pressure()
-        imageName = takePicture()
-        img = cv2.imread('img%d.jpg'%imagenumber)
-        cloud = cloud_estimate(img)
-        
-        with open (filename, "a") as file:
-            file.write("%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s \n" % (time, imageName, cloud, mag_x, mag_y, mag_z, pressure, pitch, roll, yaw, angle, issRA, issDEC))
-        sleep(5)
-    main()
+        if (now_time < start_time + datetime.timedelta(minutes=178)):
+            time = datetime.datetime.now()
+            mag_x, mag_y, mag_z = get_magnetometer()
+            angle, issRA, issDEC = get_isslocation()
+            pitch, roll, yaw = get_orientation()
+            pressure = get_pressure()
+            imageName = takePicture()
+            img = cv2.imread('img%d.jpg'%imagenumber)
+            cloud = cloud_estimate(img)
+            
+            with open (filename, "a") as file:
+                file.write("%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s \n" % (time, imageName, cloud, mag_x, mag_y, mag_z, pressure, pitch, roll, yaw, angle, issRA, issDEC))
+            
+            now_time = datetime.datetime.now()
+            print(now_time)
+            sleep(5)
+        else:
+            end = True
+            print("program ended")
+            break
+    if end:
+        pass
+    else:
+        main()
 
 def takePicture():
     global imagenumber
@@ -107,16 +122,13 @@ def isDay():
         return True
 
 def main():
-    while (now_time < start_time + datetime.timedelta(minutes=2)):
-        if isDay() == True:
-            print("comma running")
-            saveData()
-        elif isDay() == False:
-            print("comma waiting")
-            sleep(600)
-            main()
-        now_time = datetime.datetime.now()
-    print('2 minutes')
+    if isDay() == True:
+        print("comma running")
+        saveData()
+    elif isDay() == False:
+        print("comma waiting")
+        sleep(600)
+        main()
 
 if __name__ == '__main__':
     main()
